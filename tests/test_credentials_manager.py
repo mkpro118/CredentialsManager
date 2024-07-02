@@ -1,11 +1,11 @@
+import json
 import os
 import tempfile
 import unittest
 
-try:
-    from credentials_manager import (CredentialsManager,
-                                     CredentialsNotFoundError)
-except ImportError:
+try:  # pragma: no cover
+    from credentials_manager import CredentialsManager, CredentialsNotFoundError
+except ImportError:  # pragma: no cover
     import pathlib
     import sys
 
@@ -13,8 +13,7 @@ except ImportError:
     src = tests.parent / 'src'
     sys.path.insert(0, str(src))
 
-    from credentials_manager import (CredentialsManager,
-                                     CredentialsNotFoundError)
+    from credentials_manager import CredentialsManager, CredentialsNotFoundError
 
 
 class TestCredentialsManager(unittest.TestCase):
@@ -40,9 +39,25 @@ class TestCredentialsManager(unittest.TestCase):
         retrieved_data = self.cm.get(name)
         self.assertEqual(data2, retrieved_data)
 
+    def test_store_bad_input(self):
+        with self.assertRaises(TypeError):
+            self.cm.store(self, 'self')
+        with self.assertRaises(ValueError):
+            self.cm.store('', 'self')
+        with self.assertRaises(TypeError):
+            self.cm.store('name', self)
+        with self.assertRaises(ValueError):
+            self.cm.store('name', '')
+
     def test_get_nonexistent(self):
         with self.assertRaises(ValueError):
             self.cm.get("nonexistent_cred")
+
+    def test_get_bad_input(self):
+        with self.assertRaises(TypeError):
+            self.cm.get(self)
+        with self.assertRaises(ValueError):
+            self.cm.get('')
 
     def test_update_password(self):
         name = "test_cred"
@@ -91,6 +106,10 @@ class TestCredentialsManager(unittest.TestCase):
 
         os.unlink(filename)
 
+    def test_save_bad_filename(self):
+        with self.assertRaises(ValueError):
+            self.cm.save(self)
+
     def test_load_nonexistent_file(self):
         with self.assertRaises(CredentialsNotFoundError):
             CredentialsManager.load("nonexistent_file.json", self.password)
@@ -101,6 +120,16 @@ class TestCredentialsManager(unittest.TestCase):
             filename = tmp.name
 
         with self.assertRaises(ValueError):
+            CredentialsManager.load(filename, self.password)
+
+        os.unlink(filename)
+
+        data = [{"hello": "world"}]
+        with tempfile.NamedTemporaryFile(mode='w', delete=False) as tmp:
+            json.dump(data, tmp)
+            filename = tmp.name
+
+        with self.assertRaises(TypeError):
             CredentialsManager.load(filename, self.password)
 
         os.unlink(filename)
@@ -118,6 +147,27 @@ class TestCredentialsManager(unittest.TestCase):
             CredentialsManager.load(filename, "wrong_password")
 
         os.unlink(filename)
+
+    def test_load_bad_input(self):
+        with self.assertRaises(ValueError):
+            CredentialsManager.load(self, self.password)
+
+    def test_load_missing_fields(self):
+        data = [
+            {'__cm_password__': 'pswd'},  # Missing __salt__
+            {'__salt__': 'pswd'},  # Missing __cm_password__
+            {'hello': 'world'},  # Missing both
+        ]
+
+        for item in data:
+            with tempfile.NamedTemporaryFile(mode='w', delete=False) as tmp:
+                json.dump(item, tmp)
+                filename = tmp.name
+
+            with self.assertRaises(ValueError):
+                CredentialsManager.load(filename, self.password)
+
+            os.unlink(filename)
 
     def test_different_system_info(self):
         # This test is to ensure that the same password on different
@@ -142,5 +192,5 @@ class TestCredentialsManager(unittest.TestCase):
         self.assertEqual(cm1.get(name), cm2.get(name))
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no cover
     unittest.main()

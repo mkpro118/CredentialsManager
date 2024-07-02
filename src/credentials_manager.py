@@ -90,3 +90,43 @@ class CredentialsManager:
             '__cm_password__': pswd,
             '__salt__': salt,
         }
+
+    def store(self, name: str, data: str, overwrite: bool = False) -> None:
+        """Store a credential.
+
+        Args:
+            name (str): The name of the credential.
+            data (str): The credential data to store.
+            overwrite (bool): If True, allow overwriting existing credentials.
+
+        Raises:
+            ValueError: If the credential already exists and overwrite is False.
+        """
+        # Input validation starts
+        if not isinstance(name, str):
+            raise TypeError(
+                f'Credential name must be of type {str},'
+                f' found type {type(name)}'
+            )
+
+        if len(name) <= 0:
+            raise ValueError("Credential name must be a non-empty string")
+
+        if not isinstance(data, str):
+            raise TypeError(
+                f'Credential data must be of type {str},'
+                f' found type {type(data)}'
+            )
+
+        if len(data) <= 0:
+            raise ValueError("Credential data must be a non-empty string")
+
+        if name in self.__mapping and not overwrite:
+            raise ValueError(
+                'Cannot overwrite credential unless `overwrite=True` is passed'
+            )
+
+        # Input validation ends, real work begins
+
+        f = lambda x: ord(x[1]) ^ self.__key[x[0] % len(self.__key)]
+        self.__mapping[name] = bytearray(map(f, enumerate(data)))

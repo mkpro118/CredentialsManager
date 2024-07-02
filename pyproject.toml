@@ -1,0 +1,69 @@
+[build-system]
+requires = ["setuptools >= 70.1", "pip >= 24.1", "wheel >= 0.43"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "credentials-manager"
+requires-python = ">=3.10"
+description = "A utility for securely managing and storing credentials."
+version = "0.1.0"
+authors = [
+    {name = "Mrigank Kumar", email = "mkpro118@gmail.com"},
+]
+readme = {file = "README.md", content-type = "text/markdown"}
+license = {file = "LICENSE"}
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+
+  # Indicate who your project is intended for
+  "Intended Audience :: Developers",
+  "Topic :: Software Development :: Build Tools",
+
+  "License :: OSI Approved :: MIT License",
+
+  # Specify the Python versions you support here.
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+]
+
+[project.urls]
+Repository = "https://github.com/mkpro118/CredentialsManager.git"
+Issues = "https://github.com/mkpro118/CredentialsManager/issues"
+
+[project.optional-dependencies]
+dev = [
+    "black>=24.2.0",
+    "isort>=5.13.0",
+    "mypy>=1.10.0",
+]
+
+[tool.black]
+line-length = 80
+target-version = ['py311']
+
+[tool.isort]
+profile = "black"
+line_length = 80
+
+[tool.mypy]
+python_version = "3.11"
+allow_redefinition = true
+check_untyped_defs = true
+disable_error_code = ["no-untyped-call"]
+disallow_any_decorated = true
+disallow_incomplete_defs = true
+disallow_untyped_decorators = true
+disallow_untyped_defs = false
+enable_error_code = ["ignore-without-code", "unused-awaitable"]
+ignore_missing_imports = true
+pretty = true
+show_error_context = true
+strict = true
+strict_equality = true
+strict_optional = true
+warn_no_return = true
+warn_redundant_casts = true
+warn_return_any = true
+warn_unreachable = true
+warn_unused_ignores = true

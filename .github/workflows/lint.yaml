@@ -1,4 +1,4 @@
-name: MyPy Lint
+name: MyPy
 
 on:
   workflow_dispatch:

@@ -1,7 +1,10 @@
+import base64
 import hashlib
+import json
 import platform
 import secrets
 import struct
+from pathlib import Path
 from typing import Optional
 
 
@@ -161,3 +164,26 @@ class CredentialsManager:
         f = lambda x: x[1] ^ self.__key[x[0] % len(self.__key)]
         plain = bytearray(map(f, enumerate(self.__mapping[name])))
         return plain.decode('utf-8')
+
+    def save(self, filename: str | Path) -> None:
+        """Save the credentials to a file.
+
+        Args:
+            filename (str | Path): The path to save the credentials file.
+        """
+        if not filename or not isinstance(filename, (str, Path)):
+            raise ValueError(
+                f'filename must be a string or a pathlib.Path instance'
+            )
+
+        filename = str(filename)
+
+        # We encode the bytearray to base64 to have JSON Serializable data
+        # I do not believe this would make the credentials less secure
+        data = {
+            k: base64.b64encode(v).decode('utf-8')
+            for k, v in self.__mapping.items()
+        }
+
+        with open(filename, 'w') as f:
+            json.dump(data, f)

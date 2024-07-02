@@ -7,6 +7,8 @@ import struct
 from pathlib import Path
 from typing import Optional
 
+__all__ = ('CredentialsManager', 'CredentialsNotFoundError')
+
 
 class CredentialsNotFoundError(Exception):
     """Exception raised when the credentials file is not found."""

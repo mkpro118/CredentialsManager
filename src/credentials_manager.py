@@ -82,6 +82,37 @@ class CredentialsManager:
             pswd_is_digest (bool): If True, the password is already
                                    a SHA-256 digest.
         """
+        self.__mapping: dict[str, bytearray] = {}
+        self._update_encryptions(
+            password=password, salt=salt, pswd_is_digest=pswd_is_digest
+        )
+
+    def _update_encryptions(
+        self,
+        password: str,
+        salt: Optional[bytearray] = None,
+        pswd_is_digest: bool = False,
+    ) -> None:
+        """Update the encryption key and re-encrypt stored credentials.
+
+        This method is used internally to update the encryption key when the
+        password is changed. It re-encrypts all stored credentials with the
+        new key.
+
+        Args:
+            password (str): The new password for encryption.
+            salt (Optional[bytearray]): A new salt for the encryption key.
+                                        If not provided, the existing salt is used.
+            pswd_is_digest (bool): If True, the password is already a SHA-256 digest.
+
+        Note:
+            This method should be called whenever the password or salt is changed
+            to ensure all stored credentials remain accessible with the new key.
+
+            Ideally, this method should not be called directly,
+            rather it should be invoked by either
+            the __init__ or `update_password` methods
+        """
         if not pswd_is_digest:
             # Intentionally lose the reference to the password
             password = hashlib.sha256(password.encode()).hexdigest()
@@ -95,13 +126,55 @@ class CredentialsManager:
 
         # Make a key using the password digest and the salt
         f = lambda i: pswd[i % len(pswd)] ^ salt[i % len(salt)]
-        self.__key = bytearray(map(f, self.__KEY_RANGE))
+        key = bytearray(map(f, self.__KEY_RANGE))
 
-        # set metadata
-        self.__mapping: dict[str, bytearray] = {
-            '__cm_password__': pswd,
-            '__salt__': salt,
+        # Update existing encryptions
+
+        # Decrypt with the current key
+        original: dict[str, str] = {
+            k: self.get(k)
+            for k in self.__mapping.keys()
+            if k not in ('__cm_password__', '__salt__')
         }
+
+        # Now encrypt with the new key
+        self.__key = key
+        for name, data in original.items():
+            self.store(name, data, overwrite=True)
+
+        # Update metadata
+        self.__mapping.update(
+            {
+                '__cm_password__': pswd,
+                '__salt__': salt,
+            }
+        )
+
+    def update_password(self, old_password: str, new_password: str) -> None:
+        """Update the password used for encryption.
+
+        IMPORTANT: This does not automatically save the credentials to disk.
+        Please use CredentialsManager.save(filename) to save the new
+        encryptions to a file.
+
+        Args:
+            old_password (str): The current password.
+            new_password (str): The new password to set.
+
+        Raises:
+            ValueError: If the old password is incorrect.
+        """
+        # Intentionally lose the references to the passwords
+        old_password = hashlib.sha256(old_password.encode()).hexdigest()
+
+        old_pswd = bytearray(map(ord, old_password))
+
+        if old_pswd != self.__mapping['__cm_password__']:
+            raise ValueError(
+                'Cannot update password, old password is incorrect'
+            )
+
+        self._update_encryptions(password=new_password, pswd_is_digest=True)
 
     def store(self, name: str, data: str, overwrite: bool = False) -> None:
         """Store a credential.

@@ -13,6 +13,9 @@ on:
       - "src/*"
       - "tests/*"
 
+permissions:
+  contents: write
+
 jobs:
   test:
     runs-on: ${{ matrix.os }}

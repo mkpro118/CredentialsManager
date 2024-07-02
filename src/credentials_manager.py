@@ -196,3 +196,70 @@ class CredentialsManager:
 
         with open(filename, 'w') as f:
             json.dump(data, f)
+
+    @classmethod
+    def load(cls, filename: str | Path, password: str) -> 'CredentialsManager':
+        """Load credentials from a file.
+
+        Args:
+            filename (str | Path): The path to the credentials file.
+            password (str): The password to decrypt the credentials.
+
+        Returns:
+            CredentialsManager: A new instance with the loaded credentials.
+
+        Raises:
+            CredentialsNotFoundError: If the credentials file is not found.
+            TypeError: If the file content is not a valid dictionary.
+            ValueError: If the file is missing required fields or the password
+                        is incorrect.
+        """
+        if not filename or not isinstance(filename, (str, Path)):
+            raise ValueError(
+                f'filename must be a string or a pathlib.Path instance'
+            )
+
+        filename = str(filename)
+
+        # Intentionally lose our reference to the password
+        # We only care about the hash
+        password = hashlib.sha256(password.encode()).hexdigest()
+        given_pswd = bytearray(map(ord, password))
+
+        # Open, read and load the file
+        try:
+            with open(filename) as f:
+                data = json.load(f)
+        except FileNotFoundError:
+            raise CredentialsNotFoundError(filename)
+
+        # Ensure the credentials file is the same format as expected
+        if not isinstance(data, dict):
+            raise TypeError('Invalid credentials file configuration')
+
+        # These fields are essential, other the data is corrupt
+        if '__cm_password__' not in data or '__salt__' not in data:
+            raise ValueError(
+                'Invalid credentials file. Missing required fields'
+            )
+
+        # Extract and decode the mappings from the credentials file
+        mappings = {k: bytearray(base64.b64decode(v)) for k, v in data.items()}
+
+        # Ensure the password hashes match
+        loaded_pwsd = mappings['__cm_password__']
+        if loaded_pwsd != given_pswd:
+            raise ValueError('Incorrect password')
+
+        # Passwords should always be decodable, they were SHA-256 digests
+        # which are represented as ASCII values, so UTF-8 should have no problems
+        password = loaded_pwsd.decode('utf-8')
+        salt = mappings['__salt__']
+
+        # We have all the pieces, create a Credential Manager instance
+        obj = cls(password=password, salt=salt, pswd_is_digest=True)
+
+        # Set the mappings
+        obj.__mapping = mappings
+
+        return obj

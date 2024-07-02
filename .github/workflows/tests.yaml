@@ -43,22 +43,22 @@ jobs:
           coverage report -m
 
       - name: Create coverage folder
-        if: ${{ matrix.os }} == "ubuntu-latest"
+        if:  matrix.os == 'ubuntu-latest'
         run: |
           mkdir -p coverage
 
       - name: Upgrade setuptools
-        if: ${{ matrix.os }} == "ubuntu-latest"
+        if:  matrix.os == 'ubuntu-latest'
         run: pip install --upgrade setuptools
 
       - name: Create Coverage Badge
-        if: ${{ matrix.os }} == "ubuntu-latest"
+        if:  matrix.os == 'ubuntu-latest'
         uses: tj-actions/coverage-badge-py@v2
         with:
           output: coverage/coverage.svg
 
       - name: Publish coverage report to coverage-badge branch
-        if: ${{ matrix.os }} == "ubuntu-latest"
+        if:  matrix.os == 'ubuntu-latest'
         uses: JamesIves/github-pages-deploy-action@v4
         with:
           branch: coverage-badge

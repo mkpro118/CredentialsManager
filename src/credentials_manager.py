@@ -1,6 +1,8 @@
 import hashlib
 import platform
+import secrets
 import struct
+from typing import Optional
 
 
 def _get_key_length() -> tuple[int, int]:
@@ -41,3 +43,50 @@ def _get_key_length() -> tuple[int, int]:
         return MIN_LENGTH + (length % (MAX_LENGTH - MIN_LENGTH + 1))
 
     return clip(key_length), clip(salt_length)
+
+
+class CredentialsManager:
+    """A class for securely managing and storing credentials.
+
+    This class provides methods to store, retrieve, and save credentials
+    using a password-based encryption scheme.
+    """
+
+    __KEY_RANGE, __SALT_RANGE = tuple(map(range, _get_key_length()))
+
+    def __init__(
+        self,
+        password: str,
+        *,
+        salt: Optional[bytearray] = None,
+        pswd_is_digest: bool = False,
+    ):
+        """Initialize the CredentialsManager.
+
+        Args:
+            password (str): The password used for encryption.
+            salt (bytearray): A salt for the encryption key.
+                              If not provided, a salt is generated.
+            pswd_is_digest (bool): If True, the password is already
+                                   a SHA-256 digest.
+        """
+        if not pswd_is_digest:
+            # Intentionally lose the reference to the password
+            password = hashlib.sha256(password.encode()).hexdigest()
+
+        pswd = bytearray(map(ord, password))
+
+        # Make a salt, if not provided
+        salt = salt or bytearray(
+            [secrets.randbelow(0x100) for _ in self.__SALT_RANGE]
+        )
+
+        # Make a key using the password digest and the salt
+        f = lambda i: pswd[i % len(pswd)] ^ salt[i % len(salt)]
+        self.__key = bytearray(map(f, self.__KEY_RANGE))
+
+        # set metadata
+        self.__mapping: dict[str, bytearray] = {
+            '__cm_password__': pswd,
+            '__salt__': salt,
+        }

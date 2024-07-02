@@ -8,6 +8,15 @@ from pathlib import Path
 from typing import Optional
 
 
+class CredentialsNotFoundError(Exception):
+    """Exception raised when the credentials file is not found."""
+
+    def __init__(self, path):
+        self.path = path
+        self.message = f"Credentials file not found at {path}"
+        super().__init__(self.message)
+
+
 def _get_key_length() -> tuple[int, int]:
     """Determine the key and salt lengths based on system information.
 

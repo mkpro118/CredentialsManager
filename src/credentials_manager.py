@@ -130,3 +130,34 @@ class CredentialsManager:
 
         f = lambda x: ord(x[1]) ^ self.__key[x[0] % len(self.__key)]
         self.__mapping[name] = bytearray(map(f, enumerate(data)))
+
+    def get(self, name: str) -> str:
+        """Retrieve a stored credential.
+
+        Args:
+            name (str): The name of the credential to retrieve.
+
+        Returns:
+            str: The decrypted credential data.
+
+        Raises:
+            ValueError: If the credential name is not found.
+        """
+        # Input validation starts
+        if not isinstance(name, str):
+            raise TypeError(
+                f'Credential name must be of type {str},'
+                f' found type {type(name)}'
+            )
+
+        if len(name) <= 0:
+            raise ValueError("Credential name must be a non-empty string")
+
+        if name not in self.__mapping:
+            raise ValueError(f'"{name}" is not a known credential')
+
+        # Input validation ends, real work begins
+
+        f = lambda x: x[1] ^ self.__key[x[0] % len(self.__key)]
+        plain = bytearray(map(f, enumerate(self.__mapping[name])))
+        return plain.decode('utf-8')

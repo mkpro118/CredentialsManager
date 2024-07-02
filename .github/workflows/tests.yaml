@@ -46,6 +46,9 @@ jobs:
         run: |
           mkdir -p coverage
 
+      - name: Upgrade setuptools
+        run: pip install --upgrade setuptools
+
       - name: Create Coverage Badge
         uses: tj-actions/coverage-badge-py@v2
         with:

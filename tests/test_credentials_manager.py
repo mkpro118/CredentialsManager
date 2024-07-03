@@ -75,6 +75,22 @@ class TestCredentialsManager(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.cm.update_password(self.password, "another_password")
 
+    def test_update_password_multiple_times(self):
+        name = "test_cred"
+        data = "test_data"
+        self.cm.store(name, data)
+
+        passwords = [self.password, *(f'pswd{i}' for i in range(10))]
+
+        for old, new in zip(passwords, passwords[1:]):
+            self.cm.update_password(old, new)
+            retrieved_data = self.cm.get(name)
+            self.assertEqual(data, retrieved_data)
+
+        for password in passwords[:-1]:
+            with self.assertRaises(ValueError):
+                self.cm.update_password(password, "new_password")
+
     def test_update_password_incorrect_old_password(self):
         with self.assertRaises(ValueError):
             self.cm.update_password("wrong_password", "new_password")

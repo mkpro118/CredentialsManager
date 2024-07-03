@@ -176,7 +176,7 @@ class CredentialsManager:
                 'Cannot update password, old password is incorrect'
             )
 
-        self._update_encryptions(password=new_password, pswd_is_digest=True)
+        self._update_encryptions(password=new_password)
 
     def store(self, name: str, data: str, overwrite: bool = False) -> None:
         """Store a credential.
